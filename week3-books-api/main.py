@@ -39,18 +39,13 @@ def get_course(books_id: int, db: Session = Depends(get_db)):
 def create_course(book_data: schemas.BookCreate, db: Session = Depends(get_db)):
     # course_data has already been checked by Pydantic.
     # We can use dot notation because course_data is a CourseCreate object.
-    course = models.Book(
+    book = models.Book(
         author=book_data.author,
         title=book_data.title,
         year=book_data.year
     )
 
-    try:
-        db.add(course)
-        db.commit()
-        db.refresh(course)
-        return course
-
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Course code already exists")
+    db.add(book)
+    db.commit()
+    db.refresh(book)
+    return book
