@@ -22,3 +22,35 @@ def get_books(db: Session = Depends(get_db)):
     books = db.query(models.Book).all()
     print(type(books))
     return books
+
+@app.get("/books/{books_id}")
+def get_course(books_id: int, db: Session = Depends(get_db)):
+    # Find one course by primary key.
+    # .first() returns one Course object or None.
+    book = db.query(models.Book).filter(models.Book.id == books_id).first()
+
+    if book is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    print(type(book))
+
+    return book
+
+@app.post("/books", status_code=201)
+def create_course(book_data: schemas.BookCreate, db: Session = Depends(get_db)):
+    # course_data has already been checked by Pydantic.
+    # We can use dot notation because course_data is a CourseCreate object.
+    course = models.Book(
+        author=book_data.author,
+        title=book_data.title,
+        year=book_data.year
+    )
+
+    try:
+        db.add(course)
+        db.commit()
+        db.refresh(course)
+        return course
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Course code already exists")
